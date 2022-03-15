@@ -51,7 +51,7 @@ def ls(folder:str):
     body=dumps(body)
     url='https://api.dropboxapi.com/2/files/list_folder'
     r=http(url,Method=POST,Header=header,Body=body)
-    #print(r)
+    print(r)
     if(r['status']<=-1):
         return r['status']
     if(r['code']==401):
@@ -349,6 +349,73 @@ def upload(path:str,file,Timeout=1000):
     return dic[tag]
 
 
+def ls_l(folder:str):
+    # -20: 文件名不合法, -15: 是文件, -10: 文件夹不存在
+    access_token=getAccessToken()
+    if(type(access_token)==type(0)):
+        return access_token
+    if(len(folder)==0 or folder[0]!='/'):
+        raise InputError('Folder name must start with "/".')
+    if(folder=='/'):
+        folder=''
+    header={
+        'Content-Type':'application/json',
+        'Authorization':'Bearer '+access_token
+    }
+    body={'path':folder}
+    body=dumps(body)
+    url='https://api.dropboxapi.com/2/files/list_folder'
+    r=http(url,Method=POST,Header=header,Body=body)
+    # print(dumps(r['text']))
+    if(r['status']<=-1):
+        return r['status']
+    if(r['code']==401):
+        return -9
+    if(r['code']!=200):
+        if(str(r['text']).find('malformed_path')>=0):
+            return -20 # 文件夹名非法
+        if(r['text']['error']['path']['.tag']=='not_found'):
+            return -10 # 文件夹不存在
+        return -15 # 是文件
+    result={}
+    for i in r['text']['entries']:
+        if(i['.tag']=='folder'):
+            result[i['name']]=[]
+        else:
+            result[i['name']]=[i['size'],toUnix(i['client_modified']),toUnix(i['server_modified'])]
+    return result
+
+
+
+def getFileProperty(file:str):
+    # -20: 文件名不合法, -15: 是文件夹, -10: 文件夹不存在
+    access_token=getAccessToken()
+    if(type(access_token)==type(0)):
+        return access_token
+    if(len(file)<=1 or file[0]!='/' or file[-1]=='/'):
+        raise InputError('Folder name must start with "/", can\'t end with "/", and root folder is not supported.')
+    header={
+        'Content-Type':'application/json',
+        'Authorization':'Bearer '+access_token
+    }
+    url='https://api.dropboxapi.com/2/files/get_metadata'
+    body={'path':file}
+    body=dumps(body)
+    r=http(url,Method=POST,Header=header,Body=body)
+    if(r['status']<=-1):
+        return r['status']
+    if(r['code']==401):
+        return -9
+    if(r['code']!=200):
+        if(str(r['text']).find('not_found')>=0):
+            return -10
+        return -20
+    if(r['text']['.tag']!='file'):
+        return -15
+    return [r['text']['size'],toUnix(r['text']['client_modified']),toUnix(r['text']['server_modified'])]
+
+def search():
+    pass
 
 
 
