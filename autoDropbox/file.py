@@ -51,7 +51,7 @@ def ls(folder:str):
     body=dumps(body)
     url='https://api.dropboxapi.com/2/files/list_folder'
     r=http(url,Method=POST,Header=header,Body=body)
-    print(r)
+    # print(r)
     if(r['status']<=-1):
         return r['status']
     if(r['code']==401):
@@ -284,7 +284,7 @@ def downloadFolder(path,localPath):
         'Dropbox-API-Arg':dumps({'path':path})
     }
     r=http(url,Method=POST,Header=header,Retry=False,Decode=False)
-    print(r)
+    # print(r)
     if(r['status']<=-1):
         return [r['status'],None]
     if(r['code']==401):
@@ -333,7 +333,7 @@ def upload(path:str,file,Timeout=1000):
     }
     timeout=1000*Timeout
     r=http(url,Method=POST,Header=header,Retry=False,Decode=False,Body=file,Timeout=timeout)
-    print(r)
+    # print(r)
     if(r['status']<=-1):
         return [r['status'],None]
     if(r['code']==401):

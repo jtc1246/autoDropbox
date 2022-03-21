@@ -4,6 +4,7 @@ import os
 from .others import *
 from time import sleep
 from _thread import start_new_thread
+import platform
 
 LOGIN_URL='https://www.dropbox.com/oauth2/authorize?client_id=vikgbifjv4zi29n&token_access_type=offline&response_type=code'
 POST='POST'
@@ -24,7 +25,8 @@ password=''
 refresh_token=''
 isValid=False
 path=os.path.expanduser('~')
-
+isWindows=((platform.platform().find('indows'))>=0)
+slash={True:'\\',False:'/'}
 
 
 def getAccessToken():
@@ -96,7 +98,7 @@ def setPassword():
     if(refresh_token!='' and isValid==True):
         flag=True
         try:
-            f=open(path+'/'+FILE_NAME,'w')
+            f=open(path+slash[isWindows]+FILE_NAME,'w')
             f.write(encrypt(refresh_token,password))
             f.close()
         except:
@@ -106,7 +108,7 @@ def setPassword():
             print('已成功将账号信息写入文件')
         return
     try:
-        f=open(path+'/'+FILE_NAME,'r')
+        f=open(path+slash[isWindows]+FILE_NAME,'r')
         text=f.readline()
         f.close()
     except:
@@ -150,7 +152,7 @@ def setAccount():
         print('暂未设置密码, 无法将账号信息写入文件, Dropbox 仅在本次运行时可直接使用, 下次运行时需重新登陆')
         return
     try:
-        f=open(path+'/'+FILE_NAME,'w')
+        f=open(path+slash[isWindows]+FILE_NAME,'w')
         f.write(encrypt(refresh_token,password))
         f.close()
     except:
