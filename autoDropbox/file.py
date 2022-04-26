@@ -1,5 +1,4 @@
 from json import dumps,loads
-from re import S
 from .authorize import getAccessToken
 from .others import *
 from myHttp import http
@@ -30,6 +29,7 @@ POST='POST'
 -15: 类型错误（e.g. ls 传入文件, download 传入文件夹)
 -11 ~ -13: 命名冲突: -11: 与末端文件名相同, -12: 与文件夹名相同, -13: 与前面的文件名相同
 -18: 复制或移动时 source 包含 target
+-24: 空间不足
 -25: 读取本地文件失败
 -30: http 错误
 10: 写入文件失败
@@ -138,7 +138,7 @@ def rm(target:str):
 
 def cp(source:str,target:str):
     # 必须添加目标文件名或文件夹名
-    # -21: source 格式不合法, -22: target 格式不合法
+    # -21: source 格式不合法, -22: target 格式不合法, -24: 空间不足
     # -10: 不存在, -11: 与末端文件名相同, -12: 与文件夹名相同, -13: 与前面的文件名相同 -18: source 包含 target
     access_token=getAccessToken()
     if(type(access_token)==type(0)):
@@ -157,6 +157,9 @@ def cp(source:str,target:str):
     body={'from_path':source,'to_path':target}
     body=dumps(body)
     r=http(url,Method=POST,Header=header,Body=body)
+    if(str(r['text']).find('nsufficient_quota')>=0):
+        return -24
+    # print(r)
     if(r['code']>=300 and r['code']<=399):
         return -30
     if(r['status']<=-1):
@@ -325,7 +328,7 @@ def upload(path:str,file,Timeout=1000):
     # Timeout 单位为 s
     # file 为本地文件路径(字符串)或二进制字符串
     # 如果是二进制字符串, 直接上传, 如果是本地文件路径, 打开读取内容后上传
-    # -30: 读取文件失败, -20: 文件名格式不合法
+    # -30: 读取文件失败, -20: 文件名格式不合法, -24: 空间不足
     if(type(file)!=type('') and type(file)!=type(b'')):
         raise InputError('The parameter file must be str or bytes.')
     access_token=getAccessToken()
@@ -350,6 +353,8 @@ def upload(path:str,file,Timeout=1000):
     timeout=1000*Timeout
     r=http(url,Method=POST,Header=header,Retry=False,Decode=False,Body=file,Timeout=timeout)
     # print(r)
+    if(str(r['text']).find('nsufficient_space')>=0):
+        return -24
     if(r['code']>=300 and r['code']<=399):
         return -30
     if(r['status']<=-1):
