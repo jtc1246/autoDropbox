@@ -1,4 +1,5 @@
 from json import dumps,loads
+from re import S
 from .authorize import getAccessToken
 from .others import *
 from myHttp import http
@@ -30,6 +31,7 @@ POST='POST'
 -11 ~ -13: 命名冲突: -11: 与末端文件名相同, -12: 与文件夹名相同, -13: 与前面的文件名相同
 -18: 复制或移动时 source 包含 target
 -25: 读取本地文件失败
+-30: http 错误
 10: 写入文件失败
 '''
 
@@ -52,6 +54,8 @@ def ls(folder:str):
     url='https://api.dropboxapi.com/2/files/list_folder'
     r=http(url,Method=POST,Header=header,Body=body)
     # print(r)
+    if(r['code']>=300 and r['code']<=399):
+        return -30
     if(r['status']<=-1):
         return r['status']
     if(r['code']==401):
@@ -88,6 +92,8 @@ def mkdir(path:str):
     body={'path':path}
     body=dumps(body)
     r=http(url,Method=POST,Header=header,Body=body)
+    if(r['code']>=300 and r['code']<=399):
+        return -30
     if(r['status']<=-1):
         return r['status']
     if(r['code']==401):
@@ -117,6 +123,8 @@ def rm(target:str):
     body={'path':target}
     body=dumps(body)
     r=http(url,Method=POST,Header=header,Body=body)
+    if(r['code']>=300 and r['code']<=399):
+        return -30
     if(r['status']<=-1):
         return r['status']
     if(r['code']==401):
@@ -149,6 +157,8 @@ def cp(source:str,target:str):
     body={'from_path':source,'to_path':target}
     body=dumps(body)
     r=http(url,Method=POST,Header=header,Body=body)
+    if(r['code']>=300 and r['code']<=399):
+        return -30
     if(r['status']<=-1):
         return r['status']
     if(r['code']==401):
@@ -191,6 +201,8 @@ def mv(source:str,target:str):
     body={'from_path':source,'to_path':target}
     body=dumps(body)
     r=http(url,Method=POST,Header=header,Body=body)
+    if(r['code']>=300 and r['code']<=399):
+        return -30
     if(r['status']<=-1):
         return r['status']
     if(r['code']==401):
@@ -247,6 +259,8 @@ def download(path:str,LocalPath=None):
     }
     r=http(url,Method=POST,Header=header,Retry=False,Decode=False)
     #print(r)
+    if(r['code']>=300 and r['code']<=399):
+        return -30
     if(r['status']<=-1):
         return [r['status'],None]
     if(r['code']==401):
@@ -285,12 +299,14 @@ def downloadFolder(path,localPath):
     }
     r=http(url,Method=POST,Header=header,Retry=False,Decode=False)
     # print(r)
+    if(r['code']>=300 and r['code']<=399):
+        return -30
     if(r['status']<=-1):
         return [r['status'],None]
     if(r['code']==401):
         return [-9,None]
     if(r['code']!=200):
-        if(str(r['text']).find('Invalid path: INVALID_PATH')>=0):
+        if(str(r['text']).find('Invalid path: INVALID_PATH')>=0 or str(r['text']).find('nvalid path')>=0):
             return [-20,None]
         if(str(r['text']).find('not_found')>=0):
             return [-10,None]
@@ -334,6 +350,8 @@ def upload(path:str,file,Timeout=1000):
     timeout=1000*Timeout
     r=http(url,Method=POST,Header=header,Retry=False,Decode=False,Body=file,Timeout=timeout)
     # print(r)
+    if(r['code']>=300 and r['code']<=399):
+        return -30
     if(r['status']<=-1):
         return [r['status'],None]
     if(r['code']==401):
@@ -367,6 +385,8 @@ def ls_l(folder:str):
     url='https://api.dropboxapi.com/2/files/list_folder'
     r=http(url,Method=POST,Header=header,Body=body)
     # print(dumps(r['text']))
+    if(r['code']>=300 and r['code']<=399):
+        return -30
     if(r['status']<=-1):
         return r['status']
     if(r['code']==401):
@@ -402,6 +422,8 @@ def getFileProperty(file:str):
     body={'path':file}
     body=dumps(body)
     r=http(url,Method=POST,Header=header,Body=body)
+    if(r['code']>=300 and r['code']<=399):
+        return -30
     if(r['status']<=-1):
         return r['status']
     if(r['code']==401):
@@ -413,6 +435,22 @@ def getFileProperty(file:str):
     if(r['text']['.tag']!='file'):
         return -15
     return [r['text']['size'],toUnix(r['text']['client_modified']),toUnix(r['text']['server_modified'])]
+
+
+
+def Type(path:str):
+    # 文件: 1, 文件夹: 2, 不存在: 0
+    s=getFileProperty(path)
+    if(s==-15):
+        return 1
+    if(s==-10):
+        return 0
+    if(type(s)==type(0)):
+        return s
+    return 2
+
+
+
 
 def search():
     pass
