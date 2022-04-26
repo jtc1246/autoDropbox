@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='autoDropbox',
-    version='0.9.6',
+    version='0.9.7',
     author='Tiancheng Jiao',
     author_email='jtc1246@outlook.com',
     url='https://github.com/jtc1246/autoDropbox',
